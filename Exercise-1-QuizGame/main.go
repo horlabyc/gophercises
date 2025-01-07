@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+type Problem struct {
+	question string
+	answer   string
+}
+
 func main() {
 	// get CSV file name
 	fileName := flag.String("file_name", "problems.csv", "Path to the CSV file")
@@ -29,29 +34,34 @@ func main() {
 	fmt.Println("Enter your answers after the questions...")
 	// create new csv reader
 	reader := csv.NewReader(file)
-	totalQuestions := 0
 	totalCorrectAnswers := 0
-	for {
-		record, err := reader.Read()
-		if err != nil {
-			if err.Error() == "EOF" {
-				break
-			}
-			continue
-		}
-		question := record[0]
-		answer := record[1]
-		userAnswer := askQuestion(question)
-		if userAnswer == answer {
+	records, err := reader.ReadAll()
+	if err != nil {
+		log.Fatal("Failed to parse CSV file.:", err)
+	}
+	quizProblems := parseRecords(records)
+	for i, p := range quizProblems {
+		userAnswer := askQuestion(i+1, p.question)
+		if userAnswer == p.answer {
 			totalCorrectAnswers++
 		}
-		totalQuestions++
 	}
-	populateSummary(totalQuestions, totalCorrectAnswers)
+	populateSummary(len(quizProblems), totalCorrectAnswers)
 }
 
-func askQuestion(question string) string {
-	fmt.Printf("Question: %-10v\n", question)
+func parseRecords(records [][]string) []Problem {
+	response := make([]Problem, len(records))
+	for i, record := range records {
+		response[i] = Problem{
+			question: record[0],
+			answer:   record[1],
+		}
+	}
+	return response
+}
+
+func askQuestion(index int, question string) string {
+	fmt.Printf("Question #%d: %s = \n", index, question)
 	inputReader := bufio.NewReader(os.Stdin)
 	opt, _ := inputReader.ReadString('\n')
 	return strings.TrimSpace(opt)
