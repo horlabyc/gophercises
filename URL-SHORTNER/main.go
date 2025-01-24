@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 
@@ -26,13 +27,16 @@ func main() {
 
 	mapHandler := urlshort.MapHandler(pathToUrls, mux)
 
-	yaml := `
-- path: /urlshort
-  url: https://github.com/gophercises/urlshort
-- path: /urlshort-final
-  url: https://github.com/gophercises/urlshort/tree/solution
-`
-	yamlHandler, err := urlshort.YAMLHandler([]byte(yaml), mapHandler)
+	yamlFileName := flag.String("yaml-file-name", "redirect.yaml", "Yaml file containing the redirect url mappings")
+	flag.Parse()
+
+	yamlDataBytes, err := urlshort.ReadFile(*yamlFileName)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Yaml file name is " + *yamlFileName)
+
+	yamlHandler, err := urlshort.YAMLHandler(yamlDataBytes, mapHandler)
 	if err != nil {
 		panic(err)
 	}

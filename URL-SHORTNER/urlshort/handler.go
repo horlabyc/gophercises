@@ -3,6 +3,7 @@ package urlshort
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -22,6 +23,14 @@ func MapHandler(pathToUrls map[string]string, fallback http.Handler) http.Handle
 type pathUrl struct {
 	Path string `yaml:"path"`
 	URL  string `yaml:"url"`
+}
+
+func ReadFile(filename string) ([]byte, error) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func YAMLHandler(yamlBytes []byte, fallback http.Handler) (http.HandlerFunc, error) {
