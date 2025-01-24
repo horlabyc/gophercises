@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/horlabyc/gophercises/URL-SHORTNER/urlshort"
 )
@@ -27,22 +29,36 @@ func main() {
 
 	mapHandler := urlshort.MapHandler(pathToUrls, mux)
 
-	yamlFileName := flag.String("yaml-file-name", "redirect.yaml", "Yaml file containing the redirect url mappings")
+	fileName := flag.String("file-name", "redirect.yaml", "Yaml file containing the redirect url mappings")
 	flag.Parse()
 
-	yamlDataBytes, err := urlshort.ReadFile(*yamlFileName)
+	fileExtension := filepath.Ext(*fileName)
+
+	dataBytes, err := urlshort.ReadFile(*fileName)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Yaml file name is " + *yamlFileName)
 
-	yamlHandler, err := urlshort.YAMLHandler(yamlDataBytes, mapHandler)
-	if err != nil {
-		panic(err)
+	var handler http.Handler
+	var error error
+	if fileExtension == ".yaml" {
+		fmt.Printf("Processing %s file extension\n", fileExtension)
+		handler, error = urlshort.YAMLHandler(dataBytes, mapHandler)
+		if error != nil {
+			panic(error)
+		}
+	} else if fileExtension == ".json" {
+		fmt.Printf("Processing %s file extension\n", fileExtension)
+		handler, error = urlshort.JSONHandler(dataBytes, mapHandler)
+		if error != nil {
+			panic(error)
+		}
+	} else {
+		log.Fatal("Allowed file extension are: .json, .yaml")
 	}
 
 	fmt.Println("Starting server on port" + PORT)
-	http.ListenAndServe("localhost:8080", LoggerMiddleware(yamlHandler))
+	http.ListenAndServe("localhost:8080", LoggerMiddleware(handler))
 }
 
 func defaultMux() *http.ServeMux {

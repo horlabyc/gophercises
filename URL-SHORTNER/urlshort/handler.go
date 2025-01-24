@@ -1,6 +1,7 @@
 package urlshort
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -43,6 +44,16 @@ func YAMLHandler(yamlBytes []byte, fallback http.Handler) (http.HandlerFunc, err
 	return MapHandler(pathsToUrls, fallback), nil
 }
 
+func JSONHandler(jsonBytes []byte, fallback http.Handler) (http.HandlerFunc, error) {
+	pathUrls, err := parseJson(jsonBytes)
+	if err != nil {
+		return nil, err
+	}
+	// Convert JSON array to map
+	pathsToUrls := buildPathMap(pathUrls)
+	return MapHandler(pathsToUrls, fallback), nil
+}
+
 func buildPathMap(pathUrls []pathUrl) map[string]string {
 	pathsToUrls := make(map[string]string)
 	for _, pu := range pathUrls {
@@ -54,6 +65,15 @@ func buildPathMap(pathUrls []pathUrl) map[string]string {
 func parseYaml(yamlData []byte) ([]pathUrl, error) {
 	var pathUrls []pathUrl
 	err := yaml.Unmarshal(yamlData, &pathUrls)
+	if err != nil {
+		return nil, err
+	}
+	return pathUrls, nil
+}
+
+func parseJson(jsonData []byte) ([]pathUrl, error) {
+	var pathUrls []pathUrl
+	err := json.Unmarshal(jsonData, &pathUrls)
 	if err != nil {
 		return nil, err
 	}
